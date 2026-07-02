@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sec-bench-evaluator"
+version = "0.1.0"
+description = "SEC-bench's PoC/patch evaluation harness, vendored and extended with a four-grader PoC oracle (Crash-only/Path-aware/Function-level/Source-location)."
+requires-python = ">=3.10"
+dependencies = [
+  "datasets>=2.14.0",
+  "docker>=7.1.0",
+  "jinja2>=3.1.4",
+  "loguru",
+  "rich>=13.0.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["secb*"]
+
+[tool.setuptools.package-data]
+"secb.evaluator.templates" = ["*.j2"]

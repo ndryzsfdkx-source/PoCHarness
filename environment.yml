@@ -1,0 +1,19 @@
+name: pocharness
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pytest
+  - pip:
+      # Editable install of the vendored smolagents fork. [docker,litellm,secb]
+      # is enough to run the reported configs (LiteLLM model client, Docker
+      # container runtime, HuggingFace `datasets` for the SEC-bench dataset).
+      # Add the "test" extra (comma-separated, no space) if you also want to
+      # run the fork's own pytest suite under vendor/smolagents/tests/ — it
+      # pulls in a much larger transitive dependency set (torch, transformers,
+      # gradio, etc.) via smolagents[all] that the reported runs don't need.
+      - -e ./vendor/smolagents[docker,litellm,secb]
+      # Vendored SEC-bench evaluator, extended with our four-grader PoC oracle
+      # (see vendor/sec-bench-evaluator/secb/evaluator/eval_instances.py).
+      - -e ./vendor/sec-bench-evaluator

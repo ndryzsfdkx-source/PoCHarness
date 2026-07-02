@@ -1,0 +1,24 @@
+PoCHarness
+Copyright the PoCHarness authors.
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Incorporates a modified copy of:
+
+- smolagents (https://github.com/huggingface/smolagents), Copyright 2024
+  HuggingFace Inc., Apache-2.0. Vendored fork under vendor/smolagents/,
+  originally forked via https://github.com/SEC-bench/smolagents (also
+  Apache-2.0). This project's own code lives under
+  vendor/smolagents/src/smolagents/secb/, layered on top without modifying
+  upstream's license terms.
+
+- SEC-bench (https://github.com/SEC-bench/SEC-bench), MIT License (see
+  vendor/sec-bench-evaluator/LICENSE), pinned to commit
+  31eb43485a3de47da260be0f978528b1f2314415. Vendored under
+  vendor/sec-bench-evaluator/, extended with a four-grader PoC oracle
+  (Crash-only/Path-aware/Function-level/Source-location) replacing SEC-bench's
+  single pass/fail oracle — this project's own contribution, layered on
+  SEC-bench's evaluation harness without modifying its license terms. Only
+  `secb/evaluator/eval_instances.py` and `view_poc_results.py` differ from
+  upstream; the rest is byte-identical. The `hwiwonlee/secb.eval.x86_64.*`
+  Docker image dataset is cited as prior work and not redistributed here.

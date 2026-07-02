@@ -1,0 +1,43 @@
+# PoCHarness A-only (solver-only) baseline, GPT-5.5, full 300-instance eval
+# split. Single-variable derivation of all300_pocharness_gpt55.toml: the A+B+C
+# scaffold is disabled (no agent.pocharness section) and the prompt swaps from
+# poc-desc-pocharness.j2 to poc-desc-floor.j2 (poc-desc.j2 plus a no-external-help
+# limitation block, since the scaffold's helper delegation no longer applies).
+# Same model, dataset, and A cost budget (2.5) as the A+B+C run, so the
+# comparison is compute-fair.
+
+[model]
+type = "LiteLLMModel"
+model_id = "openai/gpt-5.5-2026-04-23"
+service_tier = "flex"
+
+[agent]
+type = "ToolCallingAgent"
+max_steps = 75
+verbosity_level = 1
+tools = ["python_interpreter", "cmd"]
+
+[agent.cost_budget]
+enabled = true
+max_total_cost_usd = 2.5
+
+[dataset]
+name = "SEC-bench/SEC-bench"
+# eval split = all 300 instances (200 cve + 100 oss). No instance_ids => full split.
+split = "eval"
+
+[output]
+tier = "main"
+
+[docker]
+image_prefix = "hwiwonlee/secb.eval.x86_64"
+
+[docker.run_kwargs]
+mem_limit = "8g"
+network_mode = "host"
+auto_remove = true
+
+[task]
+type = "poc-desc"
+prompt_template = "poc-desc-floor.j2"
+timeout_seconds = 3600

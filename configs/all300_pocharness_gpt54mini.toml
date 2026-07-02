@@ -1,0 +1,111 @@
+# PoCHarness A+B+C, GPT-5.4-mini, full 300-instance eval split (200 CVE + 100 OSS).
+# Same scaffold as all300_pocharness_gpt55.toml, model swapped to gpt-5.4-mini.
+#
+# B (PoC Reviewer) and C (Synthesis Helper) run in description_mode: the dataset
+# sanitizer_report must not reach B or C. The evidence-grounded crash gate may
+# issue one bounded redirect before ALLOW_UNVERIFIED termination.
+
+[model]
+type = "LiteLLMModel"
+model_id = "openai/gpt-5.4-mini-2026-03-17"
+service_tier = "flex"
+
+[agent]
+type = "ToolCallingAgent"
+max_steps = 75
+verbosity_level = 1
+tools = ["python_interpreter", "cmd"]
+
+[agent.cost_budget]
+enabled = true
+mode = "per_role"
+
+[agent.cost_budget.roles.a]
+max_total_cost_usd = 2.5
+
+[agent.cost_budget.roles.b]
+max_total_cost_usd = 1.0
+
+[agent.cost_budget.roles.c]
+max_total_cost_usd = 2.5
+
+[agent.pocharness]
+enabled = true
+log_dir = "/tmp/synthesis"
+description_mode = true
+
+[agent.pocharness.finalization_guard]
+enabled = true
+min_remaining_steps = 8
+
+[agent.pocharness.reviewer]
+enabled = true
+max_b_steps = 12
+barrier_timeout_seconds = 120
+min_remaining_steps = 8
+judge_mode = "advisory"
+tools_allow = [
+  "read_a_trajectory",
+  "read_a_step",
+  "find_workspace_paths",
+  "read_workspace_file",
+  "grep_source",
+  "read_synthesis_log",
+  "run_secb_repro_on_current_testcase",
+  "emit_finalization_verdict",
+]
+
+[agent.pocharness.reviewer.evidence_policy]
+enabled = true
+mode = "enforce"
+hard_gate_scope = "explicit_type_only"
+max_evidence_challenges = 1
+target_profile_mode = "hybrid_llm"
+
+[agent.pocharness.helper]
+max_c_steps = 50
+continuation_max_c_steps = 25
+barrier_timeout_seconds = 180
+tools_allow = [
+  "read_testcase",
+  "read_repro_output",
+  "read_harness_shape",
+  "find_workspace_paths",
+  "read_workspace_file",
+  "grep_source",
+  "read_prior_helpers",
+  "write_helper",
+  "run_helper",
+  "run_secb_repro_for_helper",
+  "emit_helper",
+]
+
+[agent.pocharness.helper.workspace]
+read_allow_paths = ["/src/", "/usr/local/bin/", "/usr/bin/", "/testcase/", "Helpers/"]
+read_deny_paths = ["/eval/", "/secb/"]
+write_paths = ["Helpers/"]
+read_max_chars = 8000
+grep_max_matches = 50
+grep_timeout_secs = 5
+
+[dataset]
+name = "SEC-bench/SEC-bench"
+# eval split = all 300 instances (200 cve + 100 oss). No instance_ids => full split.
+split = "eval"
+
+[output]
+tier = "main"
+
+[docker]
+image_prefix = "hwiwonlee/secb.eval.x86_64"
+
+[docker.run_kwargs]
+mem_limit = "8g"
+network_mode = "host"
+auto_remove = true
+
+[task]
+type = "poc-desc"
+# Synthesis-aware A prompt for the updated poc-desc A+B+C scaffold.
+prompt_template = "poc-desc-pocharness.j2"
+timeout_seconds = 3600
