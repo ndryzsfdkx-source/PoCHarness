@@ -17,12 +17,17 @@ Usage:
 
     # Raw run (no eval results)
     python analyze_run.py --run-dir .../e5-combined_run1/20260326_150736
+
+    # Published Zenodo results corpus (no rerun) -- point at the <model>/<scaffold>
+    # dir, e.g. the extracted release's gpt-5.5/pocharness/
+    python analyze_run.py --eval-dir .../pocharness-results-anon/gpt-5.5/pocharness
 """
 
 from __future__ import annotations
 
 import argparse
 import base64
+import gzip
 import io
 import json
 import os
@@ -136,6 +141,19 @@ def load_report(path: Path) -> dict[str, dict]:
     }
 
 
+def _is_instance_dir(p: Path) -> bool:
+    """An instance dir either has a live-run artifacts/ folder, or (Zenodo release
+    layout) a poc/ folder or gzipped trajectory directly inside it."""
+    return p.is_dir() and (
+        (p / "artifacts").exists() or (p / "poc").exists() or (p / "trajectory.jsonl.gz").exists()
+    )
+
+
+def is_release_corpus_dir(path: Path) -> bool:
+    """True for the Zenodo release layout: <model>/<scaffold>/{eval,instances}/."""
+    return (path / "eval").is_dir() and (path / "instances").is_dir()
+
+
 def resolve_instance_root(eval_dir: Path) -> Path:
     """Directory holding the per-instance artifact dirs for an eval dir.
 
@@ -143,7 +161,7 @@ def resolve_instance_root(eval_dir: Path) -> Path:
     the eval dir itself. Nested layout (<run-dir>/eval/<ts>/): the eval dir holds
     only reports/digests/analysis; instance dirs live in the parent run dir.
     """
-    if any(p.is_dir() and (p / "artifacts").exists() for p in eval_dir.iterdir()):
+    if any(_is_instance_dir(p) for p in eval_dir.iterdir()):
         return eval_dir
     if eval_dir.parent.name == "eval":
         return eval_dir.parent.parent
@@ -153,19 +171,18 @@ def resolve_instance_root(eval_dir: Path) -> Path:
 def iter_instance_dirs(eval_dir: Path) -> list[Path]:
     """Instance dirs for an eval dir, layout-agnostic (see resolve_instance_root)."""
     root = resolve_instance_root(eval_dir)
-    return sorted(
-        p
-        for p in root.iterdir()
-        if p.is_dir() and p.name != "eval" and (p / "artifacts").exists()
-    )
+    return sorted(p for p in root.iterdir() if p.name != "eval" and _is_instance_dir(p))
 
 
 def discover_report_paths(eval_dir: Path) -> dict[str, Path]:
     reports: dict[str, Path] = {}
     for grader in ("loose", "caller", "semantic", "strict"):
-        path = eval_dir / f"report_{grader}_smolagent.jsonl"
-        if path.exists():
-            reports[grader] = path
+        # live-run name first, then the Zenodo release's unsuffixed name
+        for candidate in (f"report_{grader}_smolagent.jsonl", f"report_{grader}.jsonl"):
+            path = eval_dir / candidate
+            if path.exists():
+                reports[grader] = path
+                break
 
     legacy = eval_dir / "report_sanitizer.jsonl"
     if legacy.exists():
@@ -241,7 +258,8 @@ def load_trajectory(path: Path) -> tuple[str, list[Step]]:
     steps: list[Step] = []
     if not path.exists():
         return task_prompt, steps
-    with open(path) as f:
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -434,8 +452,14 @@ def load_instance(
     """Load all data for a single instance."""
     instance_id = instance_dir.name
     art_dir = instance_dir / "artifacts"
+    if not art_dir.exists():
+        # Zenodo release layout: no artifacts/ wrapper, trajectory is gzipped.
+        art_dir = instance_dir
+    traj_path = art_dir / "trajectory.jsonl"
+    if not traj_path.exists() and (art_dir / "trajectory.jsonl.gz").exists():
+        traj_path = art_dir / "trajectory.jsonl.gz"
     meta = load_meta(art_dir / "meta.json")
-    task_prompt, steps = load_trajectory(art_dir / "trajectory.jsonl")
+    task_prompt, steps = load_trajectory(traj_path)
     testcase_files = list_testcase_files(instance_dir / "testcase")
     return InstanceData(
         instance_id=instance_id,
@@ -511,12 +535,16 @@ def load_eval_dir(
     dataset_index: dict[str, dict] | None = None,
 ) -> EvalRun:
     """Load an eval directory: report + all instances."""
+    release_corpus = is_release_corpus_dir(path)
+    report_dir = path / "eval" if release_corpus else path
+    instance_root = path / "instances" if release_corpus else path
+
     if report_path is not None:
         available_reports = {"custom": report_path}
         primary_grader = "custom"
         report_label = report_path.name
     else:
-        available_reports = discover_report_paths(path)
+        available_reports = discover_report_paths(report_dir)
         primary_grader = resolve_primary_grader(available_reports, preferred_grader)
         report_label = (
             available_reports[primary_grader].name
@@ -527,16 +555,22 @@ def load_eval_dir(
     reports_by_grader = {grader: load_report(report) for grader, report in available_reports.items()}
     primary_report = reports_by_grader.get(primary_grader or "", {})
 
-    nested_run_dir = path.parent.parent if path.parent.name == "eval" else None
-    if nested_run_dir is not None:
-        config = find_config_for_run_dir(nested_run_dir, configs_dir)
-        name = f"{nested_run_dir.parent.name}/{nested_run_dir.name}/eval/{path.name}"
+    if release_corpus:
+        # Shipped configs are named per (model, scaffold) pair with no reliable
+        # 1:1 stem match against "<model>/<scaffold>" -- don't guess.
+        config = None
+        name = f"{path.parent.name}/{path.name}"
     else:
-        config = find_config(path.name, configs_dir) if configs_dir else None
-        name = path.name
+        nested_run_dir = path.parent.parent if path.parent.name == "eval" else None
+        if nested_run_dir is not None:
+            config = find_config_for_run_dir(nested_run_dir, configs_dir)
+            name = f"{nested_run_dir.parent.name}/{nested_run_dir.name}/eval/{path.name}"
+        else:
+            config = find_config(path.name, configs_dir) if configs_dir else None
+            name = path.name
 
     instances = []
-    for subdir in iter_instance_dirs(path):
+    for subdir in iter_instance_dirs(instance_root):
         eval_result = primary_report.get(subdir.name)
         eval_results_by_grader = {
             grader: report[subdir.name]

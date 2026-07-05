@@ -102,7 +102,8 @@ evaluator's provenance, and the offline test suites.
 ## Reproducing paper results
 
 The four reported all-300-instance runs (two models × solver-only vs.
-PoCHarness):
+PoCHarness), re-run from scratch — live API calls and fresh Docker evals,
+not a replay of the published artifacts:
 
 ```bash
 python src/pocharness/run_secbench_poc.py --config configs/all300_solver_only_gpt55.toml
@@ -112,7 +113,8 @@ python src/pocharness/run_secbench_poc.py --config configs/all300_pocharness_gpt
 ```
 
 See [`SETUP.md`](SETUP.md) for reading results back out with
-`analyze_run.py`, cost notes, and offline tests.
+`analyze_run.py`, cost notes, and offline tests — including reading the
+published corpus directly, with no rerun.
 
 ## Repository structure
 
@@ -137,6 +139,7 @@ NOTICE
 The raw per-instance artifacts and eval reports behind the tables above are
 published as a separate data record on Zenodo, not in this code repository:
 [Zenodo record (restricted access)](https://zenodo.org/records/21194495?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjhiZTdhZTQ5LTBmMjgtNDEzMC1hNGE1LTdiZGZhZDQzYzgyNyIsImRhdGEiOnt9LCJyYW5kb20iOiIwNGRjZWQwZGEyZDU3NzZhMDNhNzUyZjRlODZkZjk4MiJ9.LfScpZ_HJDd2hb-Bg5yEZjZa79444AvlADHAc3X2gQcWRSefPkFIin-IfOwdOsBWyhRF9chdHM6rsjxLfRt3GA).
+See [`SETUP.md`](SETUP.md) for reading it directly, no rerun needed.
 
 ## Terminology
 

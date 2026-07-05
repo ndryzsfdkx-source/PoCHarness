@@ -1,16 +1,41 @@
 # Setup and Reproduction
 
-Reruns the 4 reported all-300-instance runs: A-only vs. A+B+C (PoC Solver +
-Synthesis Helper + PoC Reviewer), on GPT-5.5 and GPT-5.4-mini. See
-`TERMINOLOGY.md` for paper term ↔ code name mapping.
+## Reading the published results (no rerun, no cost)
 
-## Prerequisites
+Download the results tar from the Zenodo record linked in the main
+[README](README.md#results-corpus). It has no wrapping folder, so make one
+and extract into it:
+
+```bash
+mkdir pocharness-results-anon
+tar -xf pocharness-results-anon.tar -C pocharness-results-anon
+
+python src/pocharness/analyze_run.py \
+  --eval-dir pocharness-results-anon/gpt-5.5/pocharness \
+  --output analysis.md
+```
+
+Reproduces the headline grader counts (Crash-only / Path-aware /
+Function-level / Source-location — see `TERMINOLOGY.md`) straight from the
+shipped reports. Swap `gpt-5.5/pocharness` for `gpt-5.5/solver-only`,
+`gpt-5.4-mini/solver-only`, or `gpt-5.4-mini/pocharness` for the other three
+reported results. Or just open the corpus's `SUMMARY.csv` for the raw
+pass/fail table, no command needed.
+
+## Reproducing from scratch
+
+Reruns the 4 reported all-300-instance runs: A-only vs. A+B+C (PoC Solver +
+Synthesis Helper + PoC Reviewer), on GPT-5.5 and GPT-5.4-mini — live API
+calls and fresh Docker evals, real cost (see below). See `TERMINOLOGY.md`
+for paper term ↔ code name mapping.
+
+### Prerequisites
 
 - Docker, running (pulls `hwiwonlee/secb.eval.x86_64.*` images, x86_64).
 - conda/miniforge or any Python 3.12 env manager.
 - `OPENAI_API_KEY` with access to the reported models.
 
-## 1. Environment
+### 1. Environment
 
 ```bash
 conda env create -f environment.yml
@@ -37,7 +62,7 @@ single pass/fail oracle). See `NOTICE` for exact provenance.
 `SECBENCH_EVAL_ROOT` overrides the path if you want to point at a different
 checkout.
 
-## 2. The four reported runs
+### 2. The four reported runs
 
 ```bash
 python src/pocharness/run_secbench_poc.py --config configs/all300_solver_only_gpt55.toml
@@ -53,7 +78,7 @@ or split generate/eval into separate invocations — see `--help`.
 **Cost note:** per-instance caps are $2.5 (A-only) or $2.5+$1.0+$2.5 (A+B+C),
 times 300 instances.
 
-## 3. Reading results
+### 3. Reading a fresh run's results
 
 ```bash
 python src/pocharness/analyze_run.py \
@@ -61,10 +86,7 @@ python src/pocharness/analyze_run.py \
   --output analysis.md
 ```
 
-Reproduces the headline grader counts (Crash-only / Path-aware /
-Function-level / Source-location — see `TERMINOLOGY.md`).
-
-## 4. Tests (offline)
+### 4. Tests (offline)
 
 ```bash
 cd src/pocharness && pytest tests/ && cd -
