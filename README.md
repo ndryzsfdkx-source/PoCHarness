@@ -52,7 +52,8 @@ location-aware grader rejects.
 ### Full four-grader results
 
 Reproduced directly from the released report files (see
-[Results corpus](#results-corpus) below), not hand-transcribed:
+[Published results and artifacts](#published-results-and-artifacts)), not
+hand-transcribed:
 
 | Result | Crash-only | Path-aware | Function-level | Source-location |
 |---|---|---|---|---|
@@ -61,8 +62,8 @@ Reproduced directly from the released report files (see
 | GPT-5.4-mini / solver-only | 32 | 21 | 20 | 18 |
 | GPT-5.4-mini / PoCHarness | 37 | 27 | 23 | 21 |
 
-See [Results corpus](#results-corpus) below before citing these as a clean,
-uncaveated table.
+See [Published results and artifacts](#published-results-and-artifacts)
+before citing these as a clean, uncaveated table.
 
 ## Target-aware evaluators
 
@@ -79,42 +80,30 @@ Grading gets progressively stricter about *what counts as the right crash*
 This four-grader oracle is this project's extension of SEC-bench's
 evaluation harness, which ships a single pass/fail oracle upstream.
 
-## Quick start
+## Published results and artifacts
+
+The per-instance artifacts and evaluation reports are available in the
+[Zenodo results record (restricted access)](https://zenodo.org/records/21194495?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjhiZTdhZTQ5LTBmMjgtNDEzMC1hNGE1LTdiZGZhZDQzYzgyNyIsImRhdGEiOnt9LCJyYW5kb20iOiIwNGRjZWQwZGEyZDU3NzZhMDNhNzUyZjRlODZkZjk4MiJ9.LfScpZ_HJDd2hb-Bg5yEZjZa79444AvlADHAc3X2gQcWRSefPkFIin-IfOwdOsBWyhRF9chdHM6rsjxLfRt3GA).
+Open `SUMMARY.csv` for the raw pass/fail table.
+
+## Inspecting published results
+
+No rerun or API cost is required. Download the results tar, then run:
 
 ```bash
-conda env create -f environment.yml
-conda activate pocharness
+mkdir pocharness-results-anon
+tar -xf pocharness-results-anon.tar -C pocharness-results-anon
 
-python src/pocharness/run_secbench_poc.py \
-  --config configs/all300_pocharness_gpt55.toml \
-  --instance-id njs.cve-2022-34029
+python src/pocharness/analyze_run.py \
+  --eval-dir pocharness-results-anon/gpt-5.5/pocharness \
+  --output analysis.md
 ```
 
-Runs the full PoC Solver + Synthesis Helper + PoC Reviewer scaffold against
-a single instance (generation + evaluation, the default `--stages`).
-
-## Installation
-
-Requires Docker (running) and an `OPENAI_API_KEY` with access to the
-reported models. See [`SETUP.md`](SETUP.md) for prerequisites, the vendored
-evaluator's provenance, and the offline test suites.
-
-## Reproducing paper results
-
-The four reported all-300-instance runs (two models × solver-only vs.
-PoCHarness), re-run from scratch — live API calls and fresh Docker evals,
-not a replay of the published artifacts:
-
-```bash
-python src/pocharness/run_secbench_poc.py --config configs/all300_solver_only_gpt55.toml
-python src/pocharness/run_secbench_poc.py --config configs/all300_pocharness_gpt55.toml
-python src/pocharness/run_secbench_poc.py --config configs/all300_solver_only_gpt54mini.toml
-python src/pocharness/run_secbench_poc.py --config configs/all300_pocharness_gpt54mini.toml
-```
-
-See [`SETUP.md`](SETUP.md) for reading results back out with
-`analyze_run.py`, cost notes, and offline tests — including reading the
-published corpus directly, with no rerun.
+This reads the four grader counts directly from the shipped reports. Swap
+`gpt-5.5/pocharness` for `gpt-5.5/solver-only`,
+`gpt-5.4-mini/solver-only`, or
+`gpt-5.4-mini/pocharness` for the other results.
+For a fresh run, point `--eval-dir` to its `runs/main/.../eval/...` directory.
 
 ## Repository structure
 
@@ -134,12 +123,10 @@ LICENSE
 NOTICE
 ```
 
-## Results corpus
+## Reproducing from scratch
 
-The raw per-instance artifacts and eval reports behind the tables above are
-published as a separate data record on Zenodo, not in this code repository:
-[Zenodo record (restricted access)](https://zenodo.org/records/21194495?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjhiZTdhZTQ5LTBmMjgtNDEzMC1hNGE1LTdiZGZhZDQzYzgyNyIsImRhdGEiOnt9LCJyYW5kb20iOiIwNGRjZWQwZGEyZDU3NzZhMDNhNzUyZjRlODZkZjk4MiJ9.LfScpZ_HJDd2hb-Bg5yEZjZa79444AvlADHAc3X2gQcWRSefPkFIin-IfOwdOsBWyhRF9chdHM6rsjxLfRt3GA).
-See [`SETUP.md`](SETUP.md) for reading it directly, no rerun needed.
+Fresh all-300-instance runs require Docker, live API calls, and substantial
+cost. See [`SETUP.md`](SETUP.md) for setup, commands, and tests.
 
 ## Terminology
 
