@@ -11,10 +11,10 @@ evaluator reports) are parsed by fixed name and were left unrenamed.
 | PoC Solver (Agent A) | `PoCSolverAgent` (`secb/harness/agent.py`); role `a` |
 | Synthesis Helper (Agent C) | `SynthesisHelperAgent` (`secb/harness/agent.py`); role `c`; managed-agent name `helper` |
 | PoC Reviewer (Agent B) | `PoCReviewerAgent` (`secb/review/reviewer.py`); role `b` |
-| Crash-only Evaluator | grader `loose` |
-| Path-aware Evaluator | grader `caller` |
-| Function-level Evaluator | grader `semantic` |
-| Source-location Evaluator | grader `strict` |
+| Crash-only Evaluator | evaluator `loose` |
+| Path-aware Evaluator | evaluator `caller` |
+| Function-level Evaluator | evaluator `semantic` |
+| Source-location Evaluator | evaluator `strict` |
 
 ## Modules
 
@@ -22,14 +22,14 @@ evaluator reports) are parsed by fixed name and were left unrenamed.
 |---|---|
 | Solver + Synthesis Helper | `secb/harness/` |
 | PoC Reviewer | `secb/review/` |
-| Grading algorithm (four-grader oracle) | `secb/sanitizer/` |
+| Evaluation algorithm (four-evaluator oracle) | `secb/sanitizer/` |
 | Per-role cost accounting | `secb/cost_budget/` |
 | Trajectory formatting | `secb/trajectory/` |
 
 (paths relative to `vendor/smolagents/src/smolagents/`)
 
-The evaluator that *invokes* the grading algorithm above (CLI plumbing, one
-report file per grader) is `vendor/sec-bench-evaluator/secb/evaluator/` — a
+The runner that *invokes* the evaluation algorithm above (CLI plumbing, one
+report file per evaluator) is `vendor/sec-bench-evaluator/secb/evaluator/` — a
 vendored, extended copy of SEC-bench's own evaluation harness, not part of
 the `smolagents.secb` namespace. See its `NOTICE` entry for attribution.
 
@@ -56,7 +56,7 @@ A-only runs omit `[agent.pocharness]` entirely.
 
 ## Notes
 
-Log filenames, grader tokens, role keys, verdict enums, and tool names in
+Log filenames, evaluator tokens, role keys, verdict enums, and tool names in
 the code and logs are left as-is rather than renamed to paper terms, since
 they're parsed by fixed name at runtime. The package import name also stays
 `smolagents` (this project's contribution is the `smolagents.secb.*`

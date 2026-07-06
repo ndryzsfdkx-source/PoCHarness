@@ -15,7 +15,7 @@ Incorporates a modified copy of:
 - SEC-bench (https://github.com/SEC-bench/SEC-bench), MIT License (see
   vendor/sec-bench-evaluator/LICENSE), pinned to commit
   31eb43485a3de47da260be0f978528b1f2314415. Vendored under
-  vendor/sec-bench-evaluator/, extended with a four-grader PoC oracle
+  vendor/sec-bench-evaluator/, extended with a four-evaluator PoC oracle
   (Crash-only/Path-aware/Function-level/Source-location) replacing SEC-bench's
   single pass/fail oracle — this project's own contribution, layered on
   SEC-bench's evaluation harness without modifying its license terms. Only

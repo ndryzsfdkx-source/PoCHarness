@@ -46,10 +46,25 @@ Full 300-instance `poc-desc` split, GPT-5.5:
 | Source-location, +PoCHarness | **50.7%** (152/300) — **+22 instances, +16.9% relative** |
 
 The gap between the first row and the third is the paper's central claim:
-naive crash-only grading is claiming success on instances that a
-location-aware grader rejects.
+naive crash-only evaluation is claiming success on instances that a
+location-aware evaluator rejects.
 
-### Full four-grader results
+## Target-aware evaluators
+
+Evaluation gets progressively stricter about *what counts as the right crash*
+— not each implying the previous:
+
+| Evaluator | Checks |
+|---|---|
+| Crash-only | The target sanitizer fires at all |
+| Path-aware | The crash occurs along a plausible call path |
+| Function-level | The crash occurs in the named function |
+| Source-location | The crash occurs at the named source location |
+
+This four-evaluator oracle is this project's extension of SEC-bench's
+evaluation harness, which ships a single pass/fail oracle upstream.
+
+### Full four-evaluator results
 
 Reproduced directly from the released report files (see
 [Published results and artifacts](#published-results-and-artifacts)), not
@@ -65,21 +80,6 @@ hand-transcribed:
 See [Published results and artifacts](#published-results-and-artifacts)
 before citing these as a clean, uncaveated table.
 
-## Target-aware evaluators
-
-Grading gets progressively stricter about *what counts as the right crash*
-— not each implying the previous:
-
-| Evaluator | Checks |
-|---|---|
-| Crash-only | The target sanitizer fires at all |
-| Path-aware | The crash occurs along a plausible call path |
-| Function-level | The crash occurs in the named function |
-| Source-location | The crash occurs at the named source location |
-
-This four-grader oracle is this project's extension of SEC-bench's
-evaluation harness, which ships a single pass/fail oracle upstream.
-
 ## Published results and artifacts
 
 The per-instance artifacts and evaluation reports are available in the
@@ -88,18 +88,16 @@ Open `SUMMARY.csv` for the raw pass/fail table.
 
 ## Inspecting published results
 
-No rerun or API cost is required. Download the results tar, then run:
+No rerun or API cost is required. Download and extract the results so the
+corpus is at `pocharness-results-anon/`, then run:
 
 ```bash
-mkdir pocharness-results-anon
-tar -xf pocharness-results-anon.tar -C pocharness-results-anon
-
 python src/pocharness/analyze_run.py \
   --eval-dir pocharness-results-anon/gpt-5.5/pocharness \
   --output analysis.md
 ```
 
-This reads the four grader counts directly from the shipped reports. Swap
+This reads the four evaluator counts directly from the shipped reports. Swap
 `gpt-5.5/pocharness` for `gpt-5.5/solver-only`,
 `gpt-5.4-mini/solver-only`, or
 `gpt-5.4-mini/pocharness` for the other results.
@@ -111,11 +109,11 @@ For a fresh run, point `--eval-dir` to its `runs/main/.../eval/...` directory.
 configs/                     # TOML configs for the 4 reported runs
 src/pocharness/               # orchestrator + analysis CLI
   run_secbench_poc.py         #   generate/eval/analyze pipeline entrypoint
-  analyze_run.py               #   grader-count and trajectory readout
+  analyze_run.py               #   evaluator-count and trajectory readout
 vendor/
   smolagents/                 # vendored agent framework fork
-    src/smolagents/secb/      #   this project's Solver/Helper/Reviewer/grading code
-  sec-bench-evaluator/        # vendored SEC-bench evaluator + four-grader oracle
+    src/smolagents/secb/      #   this project's Solver/Helper/Reviewer/evaluation code
+  sec-bench-evaluator/        # vendored SEC-bench evaluator + four-evaluator oracle
 environment.yml
 SETUP.md
 TERMINOLOGY.md
@@ -131,7 +129,7 @@ cost. See [`SETUP.md`](SETUP.md) for setup, commands, and tests.
 ## Terminology
 
 Paper terms (PoC Solver / Synthesis Helper / PoC Reviewer, the four
-graders) map onto specific code identifiers, modules, and config keys —
+evaluators) map onto specific code identifiers, modules, and config keys —
 see [`TERMINOLOGY.md`](TERMINOLOGY.md).
 
 ## Citation

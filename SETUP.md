@@ -35,7 +35,7 @@ pip install -e "./vendor/smolagents[docker,litellm,secb,test]"
 
 **On the vendored evaluator:** `vendor/sec-bench-evaluator/` is a pinned,
 MIT-licensed copy of SEC-bench's own evaluation harness, extended with the
-four-grader PoC oracle this paper's results depend on (upstream only has a
+four-evaluator PoC oracle this paper's results depend on (upstream only has a
 single pass/fail oracle). See `NOTICE` for exact provenance.
 `SECBENCH_EVAL_ROOT` overrides the path if you want to point at a different
 checkout.
